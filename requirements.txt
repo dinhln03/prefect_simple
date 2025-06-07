@@ -1,0 +1,5 @@
+prefect==3.4.5
+numpy==2.3.0
+pandas==2.3.0
+loguru==0.7.3
+fastparquet==2024.11.0
