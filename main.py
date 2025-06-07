@@ -1,6 +1,8 @@
 from prefect import flow, task
+from prefect.states import Completed, Failed
 import pandas as pd
 from loguru import logger
+import random
 
 from src.cfg import Config
 from src.utils import generate_fake_weather_data
@@ -37,6 +39,19 @@ def task__clean_data(df: pd.DataFrame):
     return df_cleaned
 
 @task
+def task__is_failure():
+    """
+    Task to simulate a random failure.
+    This is for testing purposes and can be removed in production.
+    """
+    num = random.randint(0, 10)
+    if num < 5:
+        logger.success("SUCCESS")
+        return False  
+    logger.error("FAIL")
+    return True
+
+@task
 def save_data(df: pd.DataFrame, config: Config = Config()):
     """
     Task to save the cleaned data to a specified path.
@@ -51,9 +66,14 @@ def flow__etl():
     task__generate_fake_weather_data()
     
     df = task__load_data()
+
+    if task__is_failure():
+        logger.error("Task failed, stopping the flow.")
+        return Failed(message="Task failed due to random failure condition.")
     df_cleaned = task__clean_data(df)
     save_data(df_cleaned)
-    
+    return Completed(message="Flow completed successfully.")
+
 if __name__ == "__main__":
     """
     Main entry point for the application.
